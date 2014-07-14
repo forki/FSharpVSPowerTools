@@ -81,3 +81,25 @@ let ``should suggest synonyms for simple types``() =
     suggest Kind.Type "Parameter" |> shouldObserve "Factor"    
     suggest Kind.Type "analyze" |> shouldObserve "study"
     suggest Kind.Type "Basket" |> shouldObserve "Container"
+
+[<Test>]
+let ``should suggest plural form for simple types``() =
+    suggest Kind.Type "Parameter" |> shouldObserve "Parameters"
+    suggest Kind.Type "Basket" |> shouldObserve "Baskets"
+    suggest Kind.Type "Octopus" |> shouldObserve "Octopuses"
+    
+[<Test>]
+let ``should suggest singluar form for simple types``() =
+    suggest Kind.Type "Cards" |> shouldObserve "Card"
+    suggest Kind.Type "Factors" |> shouldObserve "Factor"
+    suggest Kind.Type "Houses" |> shouldObserve "House"
+
+[<Test>]
+let ``should suggest plural form for simple variables``() =
+    suggest Kind.Type "list" |> shouldObserve "lists"
+    suggest Kind.Type "element" |> shouldObserve "elements"
+    
+[<Test>]
+let ``should suggest singluar form for simple variables``() =
+    suggest Kind.Type "elements" |> shouldObserve "element"
+    suggest Kind.Type "items" |> shouldObserve "item"

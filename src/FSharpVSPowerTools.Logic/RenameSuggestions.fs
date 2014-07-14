@@ -94,6 +94,9 @@ let suggest (kind:Kind) (name:string) : IObservable<string> =
     | Variable -> 
         Observable.singleton(lower name)
         |> Observable.merge (suggestIndexNames name)
-    | Type -> Observable.singleton(upper name)
+    | Type -> 
+        Observable.singleton(upper name)
+    |> Observable.merge (Observable.singleton(Pluralizer.toPlural name))
+    |> Observable.merge (Observable.singleton(Pluralizer.toSingular name))
     |> Observable.merge (createSuggestions name)
     |> Observable.filter ((<>) name)
