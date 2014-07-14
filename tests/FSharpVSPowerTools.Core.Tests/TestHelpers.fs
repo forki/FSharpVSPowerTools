@@ -65,6 +65,34 @@ let inline shouldNotContain<'T when 'T : equality> (expected : 'T) (actual : 'T 
     if actual |> Seq.exists ((=) expected) then
         Assert.Fail(sprintf "%A should not contain %A." actual expected)
 
+type TestObserver<'a>() =
+    let mutable stopped = false
+    let elements = new System.Collections.Generic.List<'a>()
+    interface IObserver<'a> with
+        member x.OnNext value = elements.Add(value)
+        member x.OnError e = raise e
+        member x.OnCompleted () = stopped <- true
+
+    member x.Elements = elements
+    member x.Stopped = stopped
+
+/// Very naive implementation - TODO: try to find better version
+let toSeq (observable: IObservable<'T>) =
+    let o = TestObserver<'T>()
+    use sub = observable.Subscribe o
+
+    while not o.Stopped do
+        System.Threading.Thread.Sleep(10)
+    o.Elements
+
+/// Asserts that a value is contained in an observable
+let inline shouldObserve<'T when 'T : equality> (expected : 'T) (actual : IObservable<'T>) =    
+    Assert.Contains(expected, actual |> toSeq)
+
+/// Asserts that a value is not contained in a collection
+let inline shouldNotObserve<'T when 'T : equality> (expected : 'T) (actual : IObservable<'T>) =
+    if actual |> toSeq |> Seq.exists ((=) expected) then
+        Assert.Fail(sprintf "%A should not contain %A." actual expected)
 
 /// Assertion functions for collections.
 [<RequireQualifiedAccess>]

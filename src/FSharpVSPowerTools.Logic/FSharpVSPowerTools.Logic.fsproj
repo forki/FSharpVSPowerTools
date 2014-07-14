@@ -102,6 +102,7 @@
       <Link>Hunspellx86.dll</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Compile Include="Observable.fs" />
     <Compile Include="RenameSuggestions.fs" />
     <Resource Include="RenameDialog.xaml" />
     <Compile Include="RenameDialog.fs" />

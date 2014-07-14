@@ -2,6 +2,7 @@
 
 open System.Text.RegularExpressions
 open System
+open FSharp.Control
 open NHunspell
 
 type Kind =
@@ -50,6 +51,7 @@ let findSynonyms hunspell word =
     |> Set.ofList
 
 
+
 let createSuggestions name =    
     use hunspell = new Hunspell("en_us.aff", "en_us.dic")
     let parts = splitInParts name
@@ -77,13 +79,16 @@ let createSuggestions name =
                      yield! prepend s]
 
     loop parts
-    |> List.map String.Concat
+    |> Observable.ofSeq
+    |> Observable.map String.Concat
+    
 
-let suggest (kind:Kind) (name:string) =    
+let suggest (kind:Kind) (name:string) : IObservable<string> =    
     match kind with
     | Variable -> 
         lower name ::
         suggestIndexNames name
-    | Type -> [upper name]
-    |> List.append (createSuggestions name)
-    |> List.filter ((<>) name)    
+    | Type -> [upper name]        
+    |> Observable.ofSeq
+    |> Observable.merge (createSuggestions name)
+    |> Observable.filter ((<>) name)
