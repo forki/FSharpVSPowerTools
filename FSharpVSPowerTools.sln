@@ -70,6 +70,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test samples", "test sample
 		tests\FSharpVSPowerTools.Core.Tests\Tutorial.fs = tests\FSharpVSPowerTools.Core.Tests\Tutorial.fs
 	EndProjectSection
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharpVSPowerTools.Logic.Tests", "tests\FSharpVSPowerTools.Logic.Tests\FSharpVSPowerTools.Logic.Tests.fsproj", "{F6A8B071-22F4-49D1-AD83-3EECEE57F448}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -104,6 +106,10 @@ Global
 		{11D1DE7D-B08F-4524-BBB5-D729223F0396}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{11D1DE7D-B08F-4524-BBB5-D729223F0396}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{11D1DE7D-B08F-4524-BBB5-D729223F0396}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F6A8B071-22F4-49D1-AD83-3EECEE57F448}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6A8B071-22F4-49D1-AD83-3EECEE57F448}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6A8B071-22F4-49D1-AD83-3EECEE57F448}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6A8B071-22F4-49D1-AD83-3EECEE57F448}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -114,5 +120,6 @@ Global
 		{D751E684-285F-494D-B402-98772A541C31} = {ED8079DD-2B06-4030-9F0F-DC548F98E1C4}
 		{697E3311-F98F-4063-B20C-D59D44CB4FA8} = {ED8079DD-2B06-4030-9F0F-DC548F98E1C4}
 		{11D1DE7D-B08F-4524-BBB5-D729223F0396} = {ED8079DD-2B06-4030-9F0F-DC548F98E1C4}
+		{F6A8B071-22F4-49D1-AD83-3EECEE57F448} = {ED8079DD-2B06-4030-9F0F-DC548F98E1C4}
 	EndGlobalSection
 EndGlobal
