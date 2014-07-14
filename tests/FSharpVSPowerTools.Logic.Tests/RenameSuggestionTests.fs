@@ -79,7 +79,7 @@ let ``should suggest synonyms for simple types``() =
     suggest Kind.Type "Parameter" |> shouldObserve "Constant"
     suggest Kind.Type "Parameter" |> shouldNotObserve "Parameter"
     suggest Kind.Type "Parameter" |> shouldObserve "Factor"    
-    suggest Kind.Type "analyze" |> shouldObserve "study"
+    suggest Kind.Type "analyze" |> shouldObserve "Study"
     suggest Kind.Type "Basket" |> shouldObserve "Container"
 
 [<Test>]
@@ -96,13 +96,13 @@ let ``should suggest singluar form for simple types``() =
 
 [<Test>]
 let ``should suggest plural form for simple variables``() =
-    suggest Kind.Type "list" |> shouldObserve "lists"
-    suggest Kind.Type "element" |> shouldObserve "elements"
+    suggest Kind.Variable "list" |> shouldObserve "lists"
+    suggest Kind.Variable "Element" |> shouldObserve "elements"
     
 [<Test>]
 let ``should suggest singluar form for simple variables``() =
-    suggest Kind.Type "elements" |> shouldObserve "element"
-    suggest Kind.Type "items" |> shouldObserve "item"
+    suggest Kind.Variable "Elements" |> shouldObserve "element"
+    suggest Kind.Variable "items" |> shouldObserve "item"
 
 [<Test>]
 let ``should suggest later parts of a longer identifier``() =

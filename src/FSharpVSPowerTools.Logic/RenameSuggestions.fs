@@ -111,12 +111,13 @@ let suggest (kind:Kind) (name:string) : IObservable<string> =
     let parts = splitInParts name
     match kind with
     | Variable -> 
-        Observable.singleton(lower name)
+        Observable.singleton(name)
         |> Observable.merge (suggestIndexNames name)
     | Type -> 
-        Observable.singleton(upper name)
+        Observable.singleton(name)
     |> Observable.merge (Observable.singleton(Pluralizer.toPlural name))
     |> Observable.merge (Observable.singleton(Pluralizer.toSingular name))
     |> Observable.merge (Observable.ofSeq(getSubParts name parts))
     |> Observable.merge (createSuggestions' name parts)
+    |> Observable.map (fun x -> if kind = Kind.Variable then lower x else upper x)
     |> Observable.filter ((<>) name)
