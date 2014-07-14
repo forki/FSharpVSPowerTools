@@ -11,21 +11,20 @@ type Kind =
 
 let suggestIndexNames name =
     let indexRegex = Regex("[i](\d*)")
-    [ let indexMatch = indexRegex.Match(name)
-      if indexMatch.Success then
-          yield "index" + indexMatch.Groups.[1].Value
-      if name = "index" then
-          yield "i"
-      if name = "i2" || name = "index2" then
-          yield "j"
-      if name = "i3" || name = "index3" then
-          yield "k" ]
+    seq { let indexMatch = indexRegex.Match(name)
+          if indexMatch.Success then
+              yield "index" + indexMatch.Groups.[1].Value
+          if name = "index" then
+              yield "i"
+          if name = "i2" || name = "index2" then
+              yield "j"
+          if name = "i3" || name = "index3" then
+              yield "k" }
+    |> Observable.ofSeq
 
-let lower (s:string) =
-    s.[0].ToString().ToLower() + if s.Length > 1 then s.Substring(1) else ""
+let lower (s:string) = s.[0].ToString().ToLower() + if s.Length > 1 then s.Substring(1) else ""
 
-let upper (s:string) =
-    s.[0].ToString().ToUpper() + if s.Length > 1 then s.Substring(1) else ""
+let upper (s:string) = s.[0].ToString().ToUpper() + if s.Length > 1 then s.Substring(1) else ""
 
 let splitInParts (name:string) =
     [let last = ref 0
@@ -50,45 +49,51 @@ let findSynonyms hunspell word =
                         if Char.IsLower(word.[0]) then yield lower s else yield upper s]
     |> Set.ofList
 
+let createSuggestions name =
+    let suggestions (observer:IObserver<_>) = async {
+        use hunspell = new Hunspell("en_us.aff", "en_us.dic")
+        let parts = splitInParts name
+
+        let rec loop parts =
+            match parts with
+            | [] -> []
+            | x::rest ->
+                let laterParts = loop rest
+                let prepend element =
+                    [if laterParts = [] then
+                         yield [element]
+                     for l in laterParts do
+                         yield element :: l]
+
+                if hunspell.Spell x then
+                    // word is correct - try to find synonyms
+                    [yield! prepend x
+
+                     for w in findSynonyms hunspell x do
+                         yield! prepend w]
+                else
+                    // word is not written correctly try to correct
+                    [for s in hunspell.Suggest x do
+                         yield! prepend s]
 
 
-let createSuggestions name =    
-    use hunspell = new Hunspell("en_us.aff", "en_us.dic")
-    let parts = splitInParts name
+        for s in loop parts do  
+            observer.OnNext(s)
+        observer.OnCompleted() }
 
-    let rec loop parts =
-        match parts with
-        | [] -> []
-        | x::rest ->
-            let laterParts = loop rest
-            let prepend element =
-                [if laterParts = [] then
-                     yield [element]
-                 for l in laterParts do
-                     yield element :: l]
 
-            if hunspell.Spell x then
-                // word is correct - try to find synonyms
-                [yield! prepend x
-
-                 for w in findSynonyms hunspell x do
-                     yield! prepend w]
-            else
-                // word is not written correctly try to correct
-                [for s in hunspell.Suggest x do
-                     yield! prepend s]
-
-    loop parts
-    |> Observable.ofSeq
+    { new IObservable<_> with
+          member x.Subscribe(observer) =
+              suggestions observer 
+              |> Async.StartDisposable }
     |> Observable.map String.Concat
     
 
 let suggest (kind:Kind) (name:string) : IObservable<string> =    
     match kind with
     | Variable -> 
-        lower name ::
-        suggestIndexNames name
-    | Type -> [upper name]        
-    |> Observable.ofSeq
+        Observable.singleton(lower name)
+        |> Observable.merge (suggestIndexNames name)
+    | Type -> Observable.singleton(upper name)
     |> Observable.merge (createSuggestions name)
     |> Observable.filter ((<>) name)
