@@ -49,10 +49,9 @@ let findSynonyms hunspell word =
                         if Char.IsLower(word.[0]) then yield lower s else yield upper s]
     |> Set.ofList
 
-let createSuggestions name =
+let private createSuggestions' name parts =
     let suggestions (observer:IObserver<_>) = async {
         use hunspell = new Hunspell("en_us.aff", "en_us.dic")
-        let parts = splitInParts name
 
         let rec loop parts =
             match parts with
@@ -87,9 +86,29 @@ let createSuggestions name =
               suggestions observer 
               |> Async.StartDisposable }
     |> Observable.map String.Concat
-    
 
-let suggest (kind:Kind) (name:string) : IObservable<string> =    
+let createSuggestions name =
+    splitInParts name
+    |> createSuggestions' name
+
+let getSubParts (name:string) parts =
+    let rec getLaterParts parts =
+        match parts with
+        | [] -> []
+        | x::rest ->
+            let laterParts = getLaterParts rest
+            [if laterParts = [] then
+                 yield [x]
+             for l in laterParts do
+                 yield l
+                 yield x :: l]
+
+    getLaterParts parts 
+    |> List.map String.Concat 
+    |> List.filter (fun s -> name.Contains(s))
+
+let suggest (kind:Kind) (name:string) : IObservable<string> =
+    let parts = splitInParts name
     match kind with
     | Variable -> 
         Observable.singleton(lower name)
@@ -98,5 +117,6 @@ let suggest (kind:Kind) (name:string) : IObservable<string> =
         Observable.singleton(upper name)
     |> Observable.merge (Observable.singleton(Pluralizer.toPlural name))
     |> Observable.merge (Observable.singleton(Pluralizer.toSingular name))
-    |> Observable.merge (createSuggestions name)
+    |> Observable.merge (Observable.ofSeq(getSubParts name parts))
+    |> Observable.merge (createSuggestions' name parts)
     |> Observable.filter ((<>) name)

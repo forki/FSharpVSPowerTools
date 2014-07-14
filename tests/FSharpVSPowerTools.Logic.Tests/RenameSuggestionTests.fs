@@ -103,3 +103,11 @@ let ``should suggest plural form for simple variables``() =
 let ``should suggest singluar form for simple variables``() =
     suggest Kind.Type "elements" |> shouldObserve "element"
     suggest Kind.Type "items" |> shouldObserve "item"
+
+[<Test>]
+let ``should suggest later parts of a longer identifier``() =
+    suggest Kind.Type "ThreadItemTest" |> shouldObserve "ItemTest"
+    suggest Kind.Type "ThreadItemTest" |> shouldObserve "Test"
+    suggest Kind.Type "VeryLongIdentifier" |> shouldObserve "LongIdentifier"
+    suggest Kind.Type "VeryLongIdentifier" |> shouldNotObserve "VeryLong"
+    suggest Kind.Type "VeryLongIdentifier" |> shouldNotObserve "VeryIdentifier"
