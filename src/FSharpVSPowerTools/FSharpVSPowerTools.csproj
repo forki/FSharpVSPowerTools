@@ -171,6 +171,21 @@
     <Compile Include="XmlDocCommandFilterProvider.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\..\lib\SpellChecker\en_US.aff">
+      <Link>en_US.aff</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="..\..\lib\SpellChecker\en_US.dic">
+      <Link>en_US.dic</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="..\..\lib\SpellChecker\th_en_US_new.dat">
+      <Link>th_en_US_new.dat</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
@@ -185,6 +200,16 @@
     </Content>
     <Content Include="..\..\docs\files\img\logo.png">
       <Link>logo.png</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="..\..\packages\NHunspell.1.1.1\native\Hunspellx64.dll">
+      <Link>Hunspellx64.dll</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="..\..\packages\NHunspell.1.1.1\native\Hunspellx86.dll">
+      <Link>Hunspellx86.dll</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
