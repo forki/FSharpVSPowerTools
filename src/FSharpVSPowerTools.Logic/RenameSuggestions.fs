@@ -49,7 +49,7 @@ let findSynonyms hunspell word =
                         if Char.IsLower(word.[0]) then yield lower s else yield upper s]
     |> Set.ofList
 
-let private createSuggestions' name parts =
+let private createSuggestions' parts =
     let suggestions (observer:IObserver<_>) = async {
         let path = IO.FileInfo(typeof<Kind>.Assembly.Location).Directory.FullName
         Hunspell.NativeDllPath <- path
@@ -91,7 +91,7 @@ let private createSuggestions' name parts =
 
 let createSuggestions name =
     splitInParts name
-    |> createSuggestions' name
+    |> createSuggestions'
 
 let getSubParts (name:string) parts =
     let rec getLaterParts parts =
@@ -120,6 +120,6 @@ let suggest (kind:Kind) (name:string) : IObservable<string> =
     |> Observable.merge (Observable.singleton(Pluralizer.toPlural name))
     |> Observable.merge (Observable.singleton(Pluralizer.toSingular name))
     |> Observable.merge (Observable.ofSeq(getSubParts name parts))
-    |> Observable.merge (createSuggestions' name parts)
+    |> Observable.merge (createSuggestions' parts)
     |> Observable.map (fun x -> if kind = Kind.Variable then lower x else upper x)
     |> Observable.filter ((<>) name)

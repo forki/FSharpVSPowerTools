@@ -68,7 +68,6 @@ type RenameDialogViewModel(originalName: string, symbol: Symbol, initializationW
     let name = self.Factory.Backing(<@@ self.Name @@>, originalName, validateName)
     let mutable symbolLocation = ""
     let fullName = self.Factory.Backing(<@@ self.FullName @@>, String.Empty)
-    let suggestions = self.Factory.Backing(<@@ self.Suggestions @@>, String.Empty)
 
     // RenameComplete is used to close our dialog from the View automatically - should be set when we want to "complete" this operation
     let renameComplete = self.Factory.Backing(<@@ self.RenameComplete @@>, false)
@@ -126,24 +125,7 @@ type RenameDialogViewModel(originalName: string, symbol: Symbol, initializationW
                 reportProgress report (Reporting("Initializing..."))
                 let! b = initializationWorkflow 
                 match b with
-                | Some(results, location, symbol') ->
-                    suggestions.Value <- 
-                        // ToDo: Remove this blocking operation
-                        let kind = 
-                            match symbol.Kind with
-                            | SymbolKind.Ident ->
-                                 match SourceCodeClassifier.getIdentifierCategory symbol' with
-                                 | SourceCodeClassifier.Category.Function -> Kind.Variable
-                                 | SourceCodeClassifier.Category.ReferenceType -> Kind.Type
-                                 | SourceCodeClassifier.Category.ValueType -> Kind.Type
-                                 | SourceCodeClassifier.Category.Module -> Kind.Type
-                                 | _ -> Kind.Variable
-                            | _ -> Kind.Type
-
-                        suggest kind originalName 
-                        |> Observable.toSeq
-                        |> fun xs -> String.Join("\r\n",xs)
-                            
+                | Some(results, location, symbol') ->                            
                     do! Async.SwitchToContext syncCtx
                     workflowArguments <- Some(symbol', location, results)                    
                     reportProgress report Idle
@@ -155,16 +137,33 @@ type RenameDialogViewModel(originalName: string, symbol: Symbol, initializationW
                             fullName.Remove locationLength
                         else fullName
                     updateFullName originalName
+
+                    // Start our suggestions
+                    let kind = 
+                        match symbol.Kind with
+                        | SymbolKind.Ident ->
+                                match SourceCodeClassifier.getIdentifierCategory symbol' with
+                                | SourceCodeClassifier.Category.Function -> Kind.Variable
+                                | SourceCodeClassifier.Category.ReferenceType -> Kind.Type
+                                | SourceCodeClassifier.Category.ValueType -> Kind.Type
+                                | SourceCodeClassifier.Category.Module -> Kind.Type
+                                | _ -> Kind.Variable
+                        | _ -> Kind.Type
+                                        
+                    // Mark initialized and bind collection now
                     initialized.Value <- true                    
+                    CollectionHelpers.bindObservableToCollectionOnContext syncCtx self.Suggestions (suggest kind originalName) 
+                    |> ignore
                 | None -> 
                     cts.Cancel()
                 waitCursor.Restore()
-            }, cts.Token)
+            }, cts.Token)        
+            
 
     // Our bound properties
     member x.Name with get() = name.Value and set(v) = name.Value <- v; updateFullName v
     member x.FullName with get() = fullName.Value and set(v) = fullName.Value <- v
-    member x.Suggestions with get() = suggestions.Value and set(v) = suggestions.Value <- v
+    member val Suggestions = System.Collections.ObjectModel.ObservableCollection<string>()
 
     // Related to progress / status reporting
     member x.Progress = progress
@@ -185,14 +184,49 @@ type RenameDialogViewController() =
             // Use the TypeProvider's Accessor sub-type to gain access to named members
             let window = RenameDialog.Accessor fe
 
-            let model = window.Root.DataContext :?> INotifyPropertyChanged
+            let model = window.Root.DataContext :?> RenameDialogViewModel
+            let modelInpc = window.Root.DataContext :?> INotifyPropertyChanged
+
+            // Custom view specific logic to handle keyboard up/down arrow events
+            let handler (_: obj) (e: KeyEventArgs) =
+                match e.Key with
+                | System.Windows.Input.Key.Down ->
+                    let current = window.listSuggestions.SelectedIndex
+                    window.listSuggestions.SelectedIndex <-
+                        match current with
+                        | last when last = window.listSuggestions.Items.Count - 1 ->
+                            0
+                        | other -> 
+                            other + 1
+                    window.listSuggestions.ScrollIntoView(window.listSuggestions.SelectedItem)
+                    e.Handled <- true
+                | System.Windows.Input.Key.Up ->
+                    let current = window.listSuggestions.SelectedIndex
+                    window.listSuggestions.SelectedIndex <-
+                        match current with
+                        | first when first <= 0  ->
+                            window.listSuggestions.Items.Count - 1
+                        | other -> 
+                            other - 1                    
+                    window.listSuggestions.ScrollIntoView(window.listSuggestions.SelectedItem)
+                    e.Handled <- true
+                | _ -> 
+                    ()
+            Keyboard.AddPreviewKeyDownHandler(window.Root, KeyEventHandler(handler))
+
             // Once the model is initialized, focus and select txtName so the user can just type "F2 / new_name / Enter"
-            model.PropertyChanged.Add(fun e ->
+            modelInpc.PropertyChanged.Add(fun e ->
                 if e.PropertyName = "Initialized" then
                     window.Root.Activate() |> ignore
                     window.txtName.IsEnabled <- true
                     window.txtName.SelectAll()
                     window.txtName.Focus() |> ignore)
+
+            // Map list box suggestion change events to model
+            window.listSuggestions.SelectionChanged.Add(fun _ ->
+                    if window.listSuggestions.SelectedIndex > -1 then
+                        model.Name <- window.listSuggestions.SelectedItem.ToString()
+                )
 
 // Module for loading the rename dialog with a viewModel + owner
 [<RequireQualifiedAccess>]

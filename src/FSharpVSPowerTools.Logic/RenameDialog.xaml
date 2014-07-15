@@ -62,12 +62,13 @@
             <HeaderedContentControl.Header>
                 <Label Content="Suggestions:" Target="{Binding ElementName=txtSuggestions}" />
             </HeaderedContentControl.Header>
-            <TextBox 
-                x:Name="txtSuggestions" 
-                IsEnabled="False"
+            <ListView 
+                x:Name="listSuggestions" 
                 Height="270"
-                Text="{Binding Suggestions, UpdateSourceTrigger=PropertyChanged}"                 
-                Style="{StaticResource ValidatingTextBox}"/>
+                ItemsSource="{Binding Suggestions}" 
+                SelectionMode="Single">
+            </ListView>
+                
         </HeaderedContentControl>
         <HeaderedContentControl Grid.Row="2" Visibility="{Binding Path=Initialized, Converter={StaticResource BoolToVisOrHide}}">
             <HeaderedContentControl.Header>
