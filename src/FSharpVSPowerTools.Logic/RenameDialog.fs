@@ -126,18 +126,30 @@ type RenameDialogViewModel(originalName: string, symbol: Symbol, initializationW
                 reportProgress report (Reporting("Initializing..."))
                 let! b = initializationWorkflow 
                 match b with
-                | Some(results, location, symbol) ->
+                | Some(results, location, symbol') ->
                     suggestions.Value <- 
                         // ToDo: Remove this blocking operation
-                        suggest Kind.Variable originalName
+                        let kind = 
+                            match symbol.Kind with
+                            | SymbolKind.Ident ->
+                                 match SourceCodeClassifier.getIdentifierCategory symbol' with
+                                 | SourceCodeClassifier.Category.Function -> Kind.Variable
+                                 | SourceCodeClassifier.Category.ReferenceType -> Kind.Type
+                                 | SourceCodeClassifier.Category.ValueType -> Kind.Type
+                                 | SourceCodeClassifier.Category.Module -> Kind.Type
+                                 | _ -> Kind.Variable
+                            | _ -> Kind.Type
+
+                        suggest kind originalName 
                         |> Observable.toSeq
-                        |> fun xs -> String.Concat(xs,"\r\n")
+                        |> fun xs -> String.Join("\r\n",xs)
+                            
                     do! Async.SwitchToContext syncCtx
-                    workflowArguments <- Some(symbol, location, results)                    
+                    workflowArguments <- Some(symbol', location, results)                    
                     reportProgress report Idle
                     symbolLocation <- 
-                        let fullName = symbol.FullName
-                        let displayName = symbol.DisplayName
+                        let fullName = symbol'.FullName
+                        let displayName = symbol'.DisplayName
                         if fullName.EndsWith displayName then
                             let locationLength = max 0 (fullName.Length - (displayName.Length + 1))
                             fullName.Remove locationLength

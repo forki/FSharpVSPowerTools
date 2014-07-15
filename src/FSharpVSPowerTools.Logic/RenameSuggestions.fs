@@ -45,12 +45,14 @@ let findSynonyms hunspell word =
         for meaning in tr.Meanings do
             if meaning.Synonyms <> null then
                 for s in meaning.Synonyms do
-                    if s <> word && not (s.Contains " ") && not (s.Contains "-") then                                     
+                    if s <> word && not (s.Contains " ") && not (s.Contains "-") then
                         if Char.IsLower(word.[0]) then yield lower s else yield upper s]
     |> Set.ofList
 
 let private createSuggestions' name parts =
     let suggestions (observer:IObserver<_>) = async {
+        let path = IO.FileInfo(typeof<Kind>.Assembly.Location).Directory.FullName
+        Hunspell.NativeDllPath <- path
         use hunspell = new Hunspell("en_us.aff", "en_us.dic")
 
         let rec loop parts =
