@@ -13,6 +13,8 @@ open FSharpVSPowerTools.IdentifierUtils
 open FSharp.ViewModule
 open FSharp.ViewModule.Progress
 open FSharp.ViewModule.Validation
+open FSharp.Control
+open FSharpVSPowerTools.Refactoring.RenameSuggestions
 
 type RenameDialog = FsXaml.XAML<"RenameDialog.xaml">
 
@@ -66,6 +68,7 @@ type RenameDialogViewModel(originalName: string, symbol: Symbol, initializationW
     let name = self.Factory.Backing(<@@ self.Name @@>, originalName, validateName)
     let mutable symbolLocation = ""
     let fullName = self.Factory.Backing(<@@ self.FullName @@>, String.Empty)
+    let suggestions = self.Factory.Backing(<@@ self.Suggestions @@>, String.Empty)
 
     // RenameComplete is used to close our dialog from the View automatically - should be set when we want to "complete" this operation
     let renameComplete = self.Factory.Backing(<@@ self.RenameComplete @@>, false)
@@ -124,6 +127,11 @@ type RenameDialogViewModel(originalName: string, symbol: Symbol, initializationW
                 let! b = initializationWorkflow 
                 match b with
                 | Some(results, location, symbol) ->
+                    suggestions.Value <- 
+                        // ToDo: Remove this blocking operation
+                        suggest Kind.Variable originalName
+                        |> Observable.toSeq
+                        |> fun xs -> String.Concat(xs,"\r\n")
                     do! Async.SwitchToContext syncCtx
                     workflowArguments <- Some(symbol, location, results)                    
                     reportProgress report Idle
@@ -144,6 +152,7 @@ type RenameDialogViewModel(originalName: string, symbol: Symbol, initializationW
     // Our bound properties
     member x.Name with get() = name.Value and set(v) = name.Value <- v; updateFullName v
     member x.FullName with get() = fullName.Value and set(v) = fullName.Value <- v
+    member x.Suggestions with get() = suggestions.Value and set(v) = suggestions.Value <- v
 
     // Related to progress / status reporting
     member x.Progress = progress
